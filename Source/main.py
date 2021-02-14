@@ -207,13 +207,13 @@ class Board:
         draw_scales()
         draw_cells()
 
+        draw_selected_cells_borders()
+
         draw_move()
         draw_winner()
 
         self.update_pieces()
         pieces_group.draw(screen)
-
-        draw_selected_cells_borders()
 
         draw_history()
 
@@ -551,7 +551,7 @@ CAPTION = "Шахматы"
 ICON = "icon.png"
 BACKGROUND_COLOR = pygame.Color(139, 69, 19)
 MAIN_COLOR = pygame.Color(214, 171, 111)
-SELECTED_CELL_COLOR = pygame.Color(201, 187, 52)
+SELECTED_CELL_COLOR = pygame.Color(255, 41, 70)
 AVAILABLE_MOVES_COLOR = pygame.Color(69, 148, 38)
 
 BLACK, WHITE = 0, 1

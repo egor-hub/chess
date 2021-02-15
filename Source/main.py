@@ -495,7 +495,6 @@ class Pawn(Piece):
             if (y1 == start_row
                     and y1 + 2 * direction == y
                     and self.parent.board[y1 + direction][x1] is None):
-
                 # Если пешка передвинулась на 2 клетки, запоминаем клетку,
                 # через которую противник может сделать взятие на проходе
                 self.en_passant = (x1, y1 + direction)
@@ -525,7 +524,11 @@ class Rook(Piece):
     def can_move(self, x, y):
         if not super().can_move(x, y):
             return False
-        return True
+
+        x1, y1 = self.get_coordinates()
+        if x1 != x and y1 != y:
+            return False
+        return self.straight_move(x, y)
 
 
 class Knight(Piece):
@@ -535,7 +538,9 @@ class Knight(Piece):
     def can_move(self, x, y):
         if not super().can_move(x, y):
             return False
-        return True
+
+        x1, y1 = self.get_coordinates()
+        return {2, 1} == {abs(x1 - x), abs(y1 - y)}
 
 
 class Bishop(Piece):
@@ -545,7 +550,11 @@ class Bishop(Piece):
     def can_move(self, x, y):
         if not super().can_move(x, y):
             return False
-        return True
+
+        x1, y1 = self.get_coordinates()
+        if abs(y1 - y) == abs(x1 - x):
+            return self.diag_move(x, y)
+        return False
 
 
 class Queen(Piece):
@@ -555,7 +564,13 @@ class Queen(Piece):
     def can_move(self, x, y):
         if not super().can_move(x, y):
             return False
-        return True
+
+        x1, y1 = self.get_coordinates()
+        if abs(y1 - y) == abs(x1 - x):
+            return self.diag_move(x, y)
+        elif x1 == x or y1 == y:
+            return self.straight_move(x, y)
+        return False
 
 
 class King(Piece):
@@ -565,7 +580,10 @@ class King(Piece):
     def can_move(self, x, y):
         if not super().can_move(x, y):
             return False
-        return True
+
+        x1, y1 = self.get_coordinates()
+        return {0, 1} == {abs(x1 - x), abs(y1 - y)} \
+               or {1, 1} == {abs(x1 - x), abs(y1 - y)}
 
 
 class PiecesSelector:

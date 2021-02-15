@@ -301,7 +301,7 @@ class Board:
         """Обработка выбранной фигуры"""
         def human_format(coordinates):
             x, y = coordinates
-            return chr(ord('A') + y) + str(x + 1)
+            return chr(ord('A') + x) + str(8 - y)
 
         x2, y2 = cell_coordinates
 

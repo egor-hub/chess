@@ -56,6 +56,10 @@ class Board:
         self.height = height
         self.board = [[None for j in range(width)] for i in range(height)]
 
+        # Атрибут содержит координаты клетки через которую возможно взятие на проходе
+        # Если взятие на подходе невозможно, атрибут равен None
+        self.en_passant = None
+
         pieces = ([Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook], [Pawn] * 8)
         for i, line in enumerate(pieces):
             for j, piece in enumerate(line):
@@ -394,6 +398,7 @@ class Piece(pygame.sprite.Sprite):
         x1, y1 = self.get_coordinates()
         self.parent.board[y][x] = self
         self.parent.board[y1][x1] = None
+        self.parent.en_passant = None
         self.moved = True
         return True
 
@@ -402,7 +407,7 @@ class Piece(pygame.sprite.Sprite):
         x, y = self.get_coordinates()
         for line in self.parent.board:
             for cell in line:
-                if isinstance(cell, Piece) and cell.color == opponent(self.color)\
+                if isinstance(cell, Piece) and cell.color == opponent(self.color) \
                         and cell.can_move(x, y):
                     return True
         return False
@@ -450,17 +455,66 @@ class Pawn(Piece):
     """Пешка"""
     IMAGE = "pawn"
 
+    def __init__(self, *args, **kwargs):
+        self.en_passant = None  # Переменная для отслеживания взятия на проходе
+        super().__init__(*args, **kwargs)
+
     def can_move(self, x, y):
+        self.en_passant = None
         if not super().can_move(x, y):
             return False
-        return True
+
+        cell = self.parent.board[y][x]
+        x1, y1 = self.get_coordinates()
+        direction = 1 if self.color == BLACK else -1
+
+        if (x, y) == self.parent.en_passant and \
+                (y1 + direction == y and (x1 + 1 == x or x1 - 1 == x)):  # Взятие на проходе
+            return True
+
+        if isinstance(cell, Piece) and cell.color != self.color:  # Пешка атакует фигуру противника
+
+            return (y1 + direction == y
+                    and (x1 + 1 == x or x1 - 1 == x))
+        else:
+            if x1 != x:
+                return False
+
+                # Пешка может сделать из начального положения ход на 2 клетки
+                # вперёд, поэтому поместим индекс начального ряда в start_row.
+            if self.color == BLACK:
+                start_row = 1
+            else:
+                start_row = 6
+
+                # ход на 1 клетку
+            if y1 + direction == y:
+                return True
+
+                # ход на 2 клетки из начального положения
+            if (y1 == start_row
+                    and y1 + 2 * direction == y
+                    and self.parent.board[y1 + direction][x1] is None):
+
+                # Если пешка передвинулась на 2 клетки, запоминаем клетку,
+                # через которую противник может сделать взятие на проходе
+                self.en_passant = (x1, y1 + direction)
+                return True
+            return False
 
     def move(self, x, y):
+        if (x, y) == self.parent.en_passant:  # Взятие на проходе
+            if self.color == BLACK:
+                self.parent.board[y - 1][x] = None
+            else:
+                self.parent.board[y + 1][x] = None
+
         if not super().move(x, y):
             return False
         if y == opponent(self.color) * 7:
             self.parent.changing_piece = self
             self.parent.pieces_selector = PiecesSelector(self.parent, self.color)
+        self.parent.en_passant = self.en_passant  # Передаём информацию о взятии на проходе классу доски
         return True
 
 

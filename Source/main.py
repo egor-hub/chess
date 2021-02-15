@@ -407,6 +407,44 @@ class Piece(pygame.sprite.Sprite):
                     return True
         return False
 
+    def straight_move(self, x, y):
+        """Метод проверяет, можно ли движением по вертикали или горизонтали
+        добраться в клетку (x, y)."""
+        x1, y1 = self.get_coordinates()
+
+        step = 1 if (x >= x1) else -1
+        for i in range(x1 + step, x, step):
+            # Если на пути по горизонтали есть фигура
+            if self.parent.board[y][i]:
+                return False
+
+        step = 1 if (y >= y1) else -1
+        for j in range(y1 + step, y, step):
+            # Если на пути по вертикали есть фигура
+            if self.parent.board[j][x]:
+                return False
+        return True
+
+    def diag_move(self, x, y):
+        """Метод проверяет, можно ли движением по диагонали
+        добраться в клетку (x, y)."""
+        x1, y1 = self.get_coordinates()
+
+        if abs(y1 - y) == abs(x1 - x):
+            if y > y1:
+                step = 1 if x > x1 else -1
+                start_row = x1
+            else:
+                step = 1 if x < x1 else -1
+                start_row = x
+
+            param = 0
+            for i in range(min(y1, y) + 1, max(y1, y)):
+                param += step
+                if self.parent.board[i][start_row + param] is not None:
+                    return False
+        return True
+
 
 class Pawn(Piece):
     """Пешка"""

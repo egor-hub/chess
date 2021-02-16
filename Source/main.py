@@ -103,6 +103,9 @@ class Board:
 
         self.history = []
 
+        # Атрибут для отслеживания возможности взятия на проходе
+        self.long_pawn_move = False
+
         # Если король находится под атакой,
         # список содержит кортежи, каждый из которых описывает напрвление от атакующей фигуры до короля
         self.attack_direction = []
@@ -358,7 +361,7 @@ class Board:
                 self.history.append(human_format((x1, y1)) + ' -> ' + human_format((x2, y2)))
                 # Если не существует pieces_selector, поменять цвет
                 if not isinstance(self.pieces_selector, PiecesSelector):
-                    self.current_color = opponent(self.current_color)
+                    self.end_turn()
         self.selected_cell = None
 
     def get_click(self, mouse_pos):
@@ -385,6 +388,32 @@ class Board:
         if not cell:
             return
         self.on_click(cell)
+
+    def end_turn(self):
+        """Метод конца хода."""
+        self.current_color = opponent(self.current_color)
+
+        if self.long_pawn_move:
+            self.long_pawn_move = False
+        else:
+            # Если пешка не двигалась на 2 клетки, перестаем отслеживать взятие на подходе
+            self.en_passant = None
+
+        # Перестаём отслеживать шах
+        self.attack_direction = []
+
+    def under_attack(self, x, y, color, ignore_cell=None):
+        """Метод проверяет находится ли клетка (x, y) под атакой фигуры цвета color.
+        Переменная 'ignore_cell' содержит кортеж клетки, которая игнорируется."""
+        for i, line in enumerate(self.board):
+            for j, cell in enumerate(line):
+                if (i, j) == ignore_cell:
+                    continue
+                if isinstance(cell, Piece):
+                    if (i != x or j != y) and cell.color == color and \
+                            cell.can_attack(self, j, i, x, y):
+                        return True
+        return False
 
 
 class Piece(pygame.sprite.Sprite):
@@ -425,10 +454,6 @@ class Piece(pygame.sprite.Sprite):
         x1, y1 = self.get_coordinates()
         self.parent.board[y][x] = self
         self.parent.board[y1][x1] = None
-        self.parent.en_passant = None
-
-        # Перестаём отслеживать шах
-        self.parent.attack_direction = []
 
         self.moved = True
         return True
@@ -544,7 +569,10 @@ class Pawn(Piece):
         if y == opponent(self.color) * 7:
             self.parent.changing_piece = self
             self.parent.pieces_selector = PiecesSelector(self.parent, self.color)
-        self.parent.en_passant = self.en_passant  # Передаём информацию о взятии на проходе классу доски
+
+        if self.en_passant:
+            self.parent.en_passant = self.en_passant  # Передаём информацию о взятии на проходе классу доски
+            self.parent.long_pawn_move = True
         return True
 
 
@@ -615,6 +643,19 @@ class King(Piece):
         x1, y1 = self.get_coordinates()
         return {0, 1} == {abs(x1 - x), abs(y1 - y)} \
                or {1, 1} == {abs(x1 - x), abs(y1 - y)}
+
+    def is_under_attack(self):
+        """Проверить находится ли фигура под угрозой вражеских фигур"""
+        x1, y1 = self.get_coordinates()
+        for i, line in enumerate(self.parent.board):
+            for j, cell in enumerate(line):
+                if isinstance(cell, Piece) and cell.color == opponent(self.color) \
+                        and cell.can_move(x1, y1):
+                    # Если шах ставит не конь, запоминаем направление атаки
+                    if not isinstance(cell, Knight):
+                        self.parent.attack_direction.append(move_direction(j, i, x1, y1))
+                    return True
+        return False
 
 
 class PiecesSelector:

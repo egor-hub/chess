@@ -461,12 +461,7 @@ class Piece(pygame.sprite.Sprite):
     def is_under_attack(self):
         """Проверить находится ли фигура под угрозой вражеских фигур"""
         x, y = self.get_coordinates()
-        for line in self.parent.board:
-            for cell in line:
-                if isinstance(cell, Piece) and cell.color == opponent(self.color) \
-                        and cell.can_move(x, y):
-                    return True
-        return False
+        self.parent.under_attack(x, y, opponent(self.color))
 
     def straight_move(self, x, y):
         """Метод проверяет, можно ли движением по вертикали или горизонтали

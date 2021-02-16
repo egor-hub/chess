@@ -45,6 +45,29 @@ def gen_piece_image_name(image_name, color):
     return f"{color_name}_{image_name}.png"
 
 
+def move_direction(row, col, row1, col1):
+    """Функция возвращает кортеж, описывающий направление движения
+    из клетки (row, col) в клетку (row1, col1) по горизонтали и по вертикали.
+    '+' - движение вверх/вправо. '-' - движение вниз/влево. '0' - движения не было."""
+    # Движение по вертикали
+    if row - row1 > 0:
+        i = '-'
+    elif row - row1 < 0:
+        i = '+'
+    else:
+        i = '0'
+
+    # Движение по горизонтали
+    if col - col1 > 0:
+        j = '-'
+    elif col - col1 < 0:
+        j = '+'
+    else:
+        j = '0'
+
+    return i, j
+
+
 class Board:
     LEFT = 70
     TOP = 90
@@ -79,6 +102,10 @@ class Board:
         self.locked = False
 
         self.history = []
+
+        # Если король находится под атакой,
+        # список содержит кортежи, каждый из которых описывает напрвление от атакующей фигуры до короля
+        self.attack_direction = []
 
     def clean(self):
         """Очистить поле от незадействованных фигур"""
@@ -399,6 +426,10 @@ class Piece(pygame.sprite.Sprite):
         self.parent.board[y][x] = self
         self.parent.board[y1][x1] = None
         self.parent.en_passant = None
+
+        # Перестаём отслеживать шах
+        self.parent.attack_direction = []
+
         self.moved = True
         return True
 

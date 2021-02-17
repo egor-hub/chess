@@ -210,7 +210,11 @@ class Board:
                 return
             for i, line in enumerate(self.board):
                 for j, cell in enumerate(line):
-                    if selected_cell.can_move(j, i):
+                    if isinstance(selected_cell, King):
+                        can_move = selected_cell.can_move(j, i, True)
+                    else:
+                        can_move = selected_cell.can_move(j, i)
+                    if can_move:
                         draw_cell_borders((j, i), AVAILABLE_MOVES_COLOR)
 
         def draw_history():
@@ -410,8 +414,11 @@ class Board:
                 if (i, j) == ignore_cell:
                     continue
                 if isinstance(cell, Piece):
-                    if (i != x or j != y) and cell.color == color and \
-                            cell.can_move(x, y):
+                    if isinstance(cell, Pawn):
+                        can_move = cell.can_move(x, y, True)
+                    else:
+                        can_move = cell.can_move(x, y)
+                    if (i != x or j != y) and cell.color == color and can_move:
                         return True
         return False
 
@@ -510,7 +517,7 @@ class Pawn(Piece):
         self.en_passant = None  # Переменная для отслеживания взятия на проходе
         super().__init__(*args, **kwargs)
 
-    def can_move(self, x, y):
+    def can_move(self, x, y, attack=False):
         self.en_passant = None
         if not super().can_move(x, y):
             return False
@@ -523,7 +530,7 @@ class Pawn(Piece):
                 (y1 + direction == y and (x1 + 1 == x or x1 - 1 == x)):  # Взятие на проходе
             return True
 
-        if isinstance(cell, Piece) and cell.color != self.color:  # Пешка атакует фигуру противника
+        if (isinstance(cell, Piece) and cell.color != self.color) or attack:  # Пешка атакует фигуру противника
 
             return (y1 + direction == y
                     and (x1 + 1 == x or x1 - 1 == x))
@@ -631,11 +638,14 @@ class King(Piece):
     """Король"""
     IMAGE = "king"
 
-    def can_move(self, x, y):
+    def can_move(self, x, y, check=False):
         if not super().can_move(x, y):
             return False
 
         x1, y1 = self.get_coordinates()
+        if check and (move_direction(x1, y1, x, y) == self.parent.attack_direction
+                      or self.parent.under_attack(x, y, opponent(self.color))):
+            return False
         return {0, 1} == {abs(x1 - x), abs(y1 - y)} \
                or {1, 1} == {abs(x1 - x), abs(y1 - y)}
 

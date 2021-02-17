@@ -45,22 +45,22 @@ def gen_piece_image_name(image_name, color):
     return f"{color_name}_{image_name}.png"
 
 
-def move_direction(row, col, row1, col1):
+def move_direction(x, y, x1, y1):
     """Функция возвращает кортеж, описывающий направление движения
-    из клетки (row, col) в клетку (row1, col1) по горизонтали и по вертикали.
+    из клетки (x, y) в клетку (x1, y1) по горизонтали и по вертикали.
     '+' - движение вверх/вправо. '-' - движение вниз/влево. '0' - движения не было."""
     # Движение по вертикали
-    if row - row1 > 0:
+    if x - x1 > 0:
         i = '-'
-    elif row - row1 < 0:
+    elif x - x1 < 0:
         i = '+'
     else:
         i = '0'
 
     # Движение по горизонтали
-    if col - col1 > 0:
+    if y - y1 > 0:
         j = '-'
-    elif col - col1 < 0:
+    elif y - y1 < 0:
         j = '+'
     else:
         j = '0'
@@ -411,7 +411,7 @@ class Board:
                     continue
                 if isinstance(cell, Piece):
                     if (i != x or j != y) and cell.color == color and \
-                            cell.can_attack(self, j, i, x, y):
+                            cell.can_move(x, y):
                         return True
         return False
 
